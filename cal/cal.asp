@@ -1,55 +1,100 @@
-<!-- 
-Copyright 1998 Jason Abbott (jabbott@uidaho.edu)
-Last updated 01/06/98
--->
-
-<html>
-<head><title>Boise Center Calendar</title></head>
-<body link="#800000" vlink="#800000" alink="#E4C721" bgcolor="#FFFFFF">
-
-<!--#include file="../authenticate.inc"-->
-<!--#include file="cal_nav.inc"-->
 <%
-if Request.Form("event_context") = "(New)" then
-	response.redirect "cal_new.asp"
-end if
+' Copyright 1999 Jason Abbott (jabbott@uidaho.edu)
+' Last updated 6/12/98
 
-dim event_context,FirstDay,DaysInMonth,TheDay,cal,col,row,rows
+dim event_context, FirstDay, DaysInMonth, TheDay, cal, col
+dim row, rows, context_list, events(31), context_name
+dim m, y, mNext, mPrev, yNext, yPrev, mLoop, yLoop
 
-' Determine values for the month and year to display
-' Form values must be converted from strings to numerics
+' ---------------------------------------------------------
+' setup values
+' ---------------------------------------------------------
 
-if Request.Form("month") = "" then
-	call cal_nav(Month(now),Year(now))
-	event_context = "Main"
-else
-	call cal_nav(CDbl(Request.Form("month")),CDbl(Request.Form("year")))
+' determine how this page was called
+
+if Request.QueryString("event_context") <> "" then
+	event_context = Request.QueryString("event_context")
+	m = CDbl(Request.QueryString("month"))
+	y = CDbl(Request.QueryString("year"))
+elseif Request.Form("event_context") = "(New)" then
+	response.redirect "cal_create.asp"
+elseif Request.Form("month") <> "" then
 	event_context = Request.Form("event_context")
+	m = CDbl(Request.Form("month"))
+	y = CDbl(Request.Form("year"))
+else
+	event_context = 10
 end if
 
-' Pull event information from database
+if m = 0 OR m = "" then
+	m = Month(now)
+	y = Year(now)
+end if
+%>
+
+<!--#include virtual="/cal/cal_nav.inc"-->
+
+<%
+' ---------------------------------------------------------
+' read in data
+' ---------------------------------------------------------
 
 Set db = Server.CreateObject("ADODB.Connection")
 db.Open "bc"
-query = "SELECT event_start FROM cal_events WHERE event_context='" & event_context _
-	& "' AND event_start BETWEEN #" & m & "/1/" & y & "#" _
-	& " AND #" & mnext & "/1/" & ynext & "#"
+
+' start new recordset
+' create list of contexts, saving current context name
+
+query = "SELECT * FROM cal_context"
+if Session("user") = "guest" then
+	query = query & " WHERE private = 0" 
+end if
+query = query & " ORDER BY name"
 
 Set rs = db.Execute(query)
-
-' Create a comma delimited string containing days with events
-
 do while not rs.EOF
-	events = events & "," & Day(rs("event_start")) & ","
+	context_list = context_list & "<option value='" & rs("id") & "'"
+	if rs("id") = CDbl(event_context) then
+		context_list = context_list & " selected"
+		context_name = rs("name")
+	end if
+	context_list = context_list & ">" & rs("name")
+	if rs("private") = "True" then context_list = context_list & "*"
+	context_list = context_list & VbCrLf
 	rs.movenext
 loop
-
 rs.Close
+
+' add option to create new calendar if not guest
+
+if Session("user") <> "guest" then context_list = context_list & "<option>(New)"
+
+' create recordset of events
+' read events into day-based array
+
+query = "SELECT * FROM cal_events WHERE event_context=" & event_context _
+	& " AND event_start BETWEEN #" & m & "/1/" & y & "#" _
+	& " AND #" & mnext & "/1/" & ynext & "# ORDER BY event_start"
+Set rs = db.Execute(query)
+do while not rs.EOF
+	events(Day(rs("event_start"))) = events(Day(rs("event_start"))) _
+		& "<br>" & Left(Right(rs("event_start"),11),5) _ 
+		& LCase(Right(rs("event_start"),2)) & ": " _
+		& "<a href='cal_detail.asp?event_id=" & rs("event_id") _
+		& "'>" & rs("event_title") & "</a>"
+	rs.movenext
+loop
+rs.Close
+db.Close
+
+' ---------------------------------------------------------
+' generate calendar body
+' ---------------------------------------------------------
 
 FirstDay = WeekDay(Dateserial(y,m,1))
 
 ' use Dateserial to find last day of this month by taking first
-' day of next month -1
+' day of next month and
 
 DaysInMonth = Day(Dateserial(y,m+1,1)-1)
 TheDay = 0
@@ -62,35 +107,36 @@ rows = Fix((DaysInMonth - (8 - FirstDay))/7) + 2
 for row = 1 to rows 
 	cal = cal & "<tr>"
 	for col = 1 to 7 
-		active = 0
 		if row = 1 AND col = FirstDay then TheDay = 1
 		if TheDay > 0 AND TheDay <= DaysInMonth then
+			cal = cal & "<td height='45' valign='top' bgcolor='#"			
 
-' Bracket the day if it is today
+' color weekdays white, weekends grey and today yellow
 
 			if y & m & TheDay = Year(now) & Month(now) & Day(now) then
-				today = "[<b>" & TheDay & "</b>]"
-			else
-				today = TheDay
-			end if
-
-			cal = cal & "<td align=center bgcolor='#"			
-
-' Highlight the day if it has events or shade it if it's a weekend
-
-			if InStr(1,events,"," & TheDay & ",",1) <> 0 then
-				cal = cal & "ffffbb'><a href='cal_list.asp?"
+				cal = cal & "ffffbb'>"
 			elseif col = 1 OR col = 7 then
-				cal = cal & "e0e0e0'><a href='cal_edit.asp?action=add&"
+				cal = cal & "eeeeee'>"
 			else
-				cal = cal & "ffffff'><a href='cal_edit.asp?action=add&"
+				cal = cal & "ffffff'>"
 			end if
-		
-			cal = cal & "event_context=" & event_context _
+			
+			cal = cal & "<font face='arial'><font size=2>"
+			if Session("user") <> "guest" then
+				cal = cal & "<a href='cal_edit.asp?" _
+				& "action=add" _
+				& "&event_context=" & event_context _
 				& "&year=" & y _
 				& "&month=" & m _
 				& "&day=" & TheDay _
-				& "'><font size=2 face='arial'>" & today & "</font></a>"
+				& "'>"
+			end if
+			cal = cal & TheDay
+			if Session("user") <> "guest" then
+				cal = cal & "</a>"
+			end if
+			cal = cal & "</font><font size=1>" _
+				& events(TheDay) & "</font>"
 			TheDay = TheDay + 1
 		else
 			cal = cal & "<td>"
@@ -100,104 +146,91 @@ for row = 1 to rows
 next
 %>
 
+<!--#include virtual="/header_start.inc"-->
+<%=context_name%> Calendar: <%=MonthName(m) & " " & y%>
+
+	</td>
+	<td align="right">
+	<font size=1 face="arial">	
+<a href="cal_print.asp?event_context=<%=event_context%>&month=<%=m%>&year=<%=y%>" target="_top">
+<img src="/graphics/button_print.gif" alt="View Printable Calendar" border=0></a>
+	</font>
+<!--#include virtual="/header_end.inc"-->
+
 <center>
 
-<!--
-Netscape doesn't support full table backgrounds so encapsulate
-table in container table cell with desired backround
--->
-
-<table><tr><td bgcolor="#C0C0C0">
-<table border="0" cellspacing="1" cellpadding="1" width=350>
+<table width="100%" height="100%" border="0" cellspacing="1" cellpadding="1">
 <tr>
-	<form method="post" action="cal.asp">
-	<td colspan=7 align=center>
-	<input type=submit value="Go to">
 
-<!-- Create drop-downs by looping through months and 20 years -->
-
-	<select name = "month">
-<% for mloop = 1 to 12 %>
-	<option value="<%=mloop%>"<% if mloop = m then %>selected<%end if%>><%=MonthName(mloop)%>
-<% next %>
-	</select>
-
-	<select name = "year">
-<% for yloop = year(Now) - 10 to year(Now) + 10 %>
-	<option <% if yloop = y then %>selected<%end if%>><%=yloop%>
-<% next %>
-	</select>
-
-<!-- Display list of calendars with option to create new -->
-
-	<select name="event_context">
 <%
-Set rs = db.Execute("SELECT * FROM cal_context ORDER BY name")
-do while not rs.EOF
-	if Not Session("user") = "guest" then	
-		response.write "<option"
-		if rs("name") = event_context then response.write " selected"
-		response.write ">" & rs("name")
-	else
-		if rs("private") <> "True" then
-			response.write "<option"
-			if rs("name") = event_context then response.write " selected"
-			response.write ">" & rs("name")
-		end if
-	end if
-	rs.movenext
-loop
-rs.close
-db.close
+' ---------------------------------------------------------
+' generate calendar header
+' ---------------------------------------------------------
 
-if Not Session("user") = "guest" then response.write "<option>(New)"
+' previous month link
+
+response.write "<td><font face='arial' size=2><b><a href='cal.asp?" _
+	& "event_context=" & event_context _
+	& "&month=" & mPrev _
+	& "&year=" & yPrev & "'>&lt;" _
+	& MonthName(mPrev) & "</a></b></font></td>"
+
+' navigation form
+	
+response.write "<form method='post' action='cal.asp'>" _
+	& "<td align='center' colspan=5>" _
+	& "<select name = 'month'>" & VbCrLf
+
+' month list
+
+for mLoop = 1 to 12
+	response.write "<option value='" & mLoop & "'"
+	if mLoop = m then response.write " selected"
+	response.write ">" & MonthName(mLoop) & VbCrLf
+next
+response.write "</select><select name = 'year'>"
+
+' year list
+
+for yLoop = year(Now) - 10 to year(Now) + 10
+	response.write "<option"
+	if yLoop = y then response.write " selected"
+	response.write ">" & yLoop & VbCrLf
+next
+
+' context list
+
+response.write "</select><select name='event_context'>" _
+	& context_list & "</select>" _
+	& "<input type='image' src='/graphics/button_go.gif' border=0>" _
+	& "</td></form>"
+
+' next month link
+
+response.write "<td align='right'><font face='arial' size=2><b>" _
+	& "<a href='cal.asp?" _
+	& "event_context=" & event_context _
+	& "&month=" & mNext _
+	& "&year=" & yNext & "'>" _
+	& MonthName(mNext) & "&gt;</a></b></font></td>"
+
+' day headings
+
+response.write "<tr>" & VbCrLf
+for col = 1 to 7
+	response.write "<td width='14.285713%' align='center'" _
+		& " color='#c0c0c0'><font face='arial' size='1'>" _
+		& WeekDayName(col,0) & "</font><hr size=1 color='#000000'></td>"
+next
+
+' insert calendar body
+
+response.write cal & "</table></center>"
+
+if Session("user") <> "guest" then
+	response.write "<font face='arial' size=2>" _
+		& "*These calendars are only visible to Boise Center users"
+end if
 %>
-	</select>
-	</td></form>
-	
-<!-- Create day headings by looping through day numbers -->
-	
-<tr>
-<% for d = 1 to 7 %>
-	<td width="14.285713%" align="CENTER" bgcolor="#800000">
-	<font face="Arial" size="1" color="#FFFFFF"><%= WeekDayName(d,1) %></font></td>
-<% next %>
 
-<!-- insert the calendar here -->
-
-	<%=cal%>
-</table>
-</td></table>
-
-<table border=0 cellpadding=0 cellspacing=0 width=350>
-<tr>
-	<form action="cal.asp" method="post">
-	<td align=left>
-	<input type="hidden" name="month" value="<%= mprev %>">
-	<input type="hidden" name="year" value="<%= yprev %>">
-	<input type="hidden" name="event_context" value="<%= event_context %>">
-	<input type=image src="../graphics/cal_left.jpg" border=0>
-	</td></form>
-
-	<td align=center>
-<% if Not events = "" then %>
-	<a href="cal_list.asp?event_context=<%=event_context%>
-		&year=<%=y%>
-		&month=<%=m%>
-		&day=0">
-	<img src="../graphics/cal_event.jpg" border=0></a>
-<% end if %>
-	</td>
-
-	<form action="cal.asp" method="post">
-	<td align=right>
-	<input type="hidden" name="month" value="<%= mnext %>">
-	<input type="hidden" name="year" value="<%= ynext %>">
-	<input type="hidden" name="event_context" value="<%= event_context %>">
-	<input type=image src="../graphics/cal_right.jpg" border=0>
-	</td></form>
-</table>
-
-</center>
-</html>
-</body>
+<!--#include virtual="/footer.inc"-->

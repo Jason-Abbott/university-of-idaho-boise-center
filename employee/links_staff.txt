@@ -1,5 +1,0 @@
-contact_info.asp
-position.asp
-duties.asp
-projects.asp
-links.asp

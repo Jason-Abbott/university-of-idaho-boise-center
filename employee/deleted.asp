@@ -1,8 +1,10 @@
 <%
-' Copyright 1997 Jason Abbott (jabbott@uidaho.edu)
-' Last updated 12/10/97
+' Copyright 1999 Jason Abbott (jabbott@uidaho.edu)
+' Last updated 02/04/99
 
-if Session("user") <> "jabbott" then response.redirect "./error.asp"
+' confirm that the current user is a technician
+
+if Not InStr(Session("technicians"), Session("user")) > 0 then response.redirect "/error.asp"
 
 ' delete user from database
 

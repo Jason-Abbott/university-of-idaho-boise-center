@@ -1,20 +1,20 @@
 <!-- 
-Copyright 1997 Jason Abbott (jabbott@uidaho.edu)
-Last updated 11/21/97
+Copyright 1999 Jason Abbott (jabbott@uidaho.edu)
+Last updated 5/29/98
 -->
 
-<html>
-<body link="#800000" vlink="#800000" alink="#E4C721" bgcolor="#FFFFFF">
+<!--#include virtual="/header_start.inc"-->
+Boise Center Floor
+<!--#include virtual="/header_end.inc"-->
 
-<font size=5>I</font>f this map is too small you can click on it to see a larger version.
+<font size=5>C</font>lick on the image to enlarge it.  Note that the rooms aren't actually numbered.  These numbers were chosen arbitrarily for this web page only.
 <p>
 <center>
 <a href="floor_big.asp">
-<img src="../graphics/floor_med.jpg" border=0>
+<img src="/graphics/floor_med.jpg" width=490 height=222 alt="Boise Center Rooms" border="1">
 </a>
-
-<!--#include file="floor.inc"-->
-
 </center>
-</body>
-</html>
+
+<!--#include virtual="/map/floor.inc"-->
+
+<!--#include virtual="/footer.inc"-->

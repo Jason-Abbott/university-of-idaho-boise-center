@@ -1,25 +1,27 @@
 <!-- 
-Copyright 1997 Jason Abbott (jabbott@uidaho.edu)
-Last updated 12/11/97
+Copyright 1999 Jason Abbott (jabbott@uidaho.edu)
+Last updated 6/10/98
 -->
 
-<html>
-<body link="#800000" vlink="#800000" alink="#E4C721" bgcolor="#FFFFFF">
-
 <%
+' query for event information and context name
+
 Set db = Server.CreateObject("ADODB.Connection")
 db.Open "bc"
-query = "SELECT * FROM cal_events" _
+query = "SELECT * FROM cal_events E INNER JOIN cal_context C" _
+	& " ON (E.event_context = C.id) " _
 	& " WHERE (event_id)=" & Request.QueryString("event_id")
 Set rs = db.Execute(query)
 %>
 
+<!--#include virtual="/header_start.inc"-->
+Delete "<%=rs("event_title")%>" from the <%=rs("name")%> calendar?
+<!--#include virtual="/header_end.inc"-->
+
+
 <form action="cal_deleted.asp" method="post">
 <center>
-<font size=5>
-Press "Delete" if you are sure that you want to delete <b><%=rs("event_title")%></b> from the <%=rs("event_context")%> calendar.
-<p>
-<font color="#ff0000">This action is not reversable.</font></font>
+<font color="#ff0000" size=6>This action is not reversable!</font>
 <p>
 <input type="hidden" name="event_id" value="<%=Request.QueryString("event_id")%>">
 <input type="hidden" name="month" value="<%=Month(rs("event_start"))%>">
@@ -28,9 +30,9 @@ Press "Delete" if you are sure that you want to delete <b><%=rs("event_title")%>
 <input type="submit" value="delete">
 </form>
 <%
-rs.close
-db.close
+rs.Close
+db.Close
 %>
 </center>
-</body>
-</html>
+
+<!--#include virtual="/footer.inc"-->

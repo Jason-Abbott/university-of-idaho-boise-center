@@ -1,13 +1,10 @@
 <!-- 
-Copyright 1998 Jason Abbott (jabbott@uidaho.edu)
-Last updated 03/26/98
+Copyright 1999 Jason Abbott (jabbott@uidaho.edu)
+Last updated 5/29/98
 -->
 
-<!--#INCLUDE VIRTUAL="./restrict.asp"-->
-
-<html>
-<body link="#800000" vlink="#800000" alink="#E4C721" bgcolor="#FFFFFF">
-
+<!--#include virtual="/header_start.inc"-->
+<!--#include virtual="/restrict.asp"-->
 <%
 dim db, bc, rs, prof, fill, form
 
@@ -21,6 +18,7 @@ if Request.QueryString("action") = "add" then
 ' should be populated with data
 	
    fill = 0
+	title = "Add Engineering Course"
 else
    form = "updated"
    fill = 1
@@ -28,9 +26,14 @@ else
 	query= "SELECT * FROM courses_engr WHERE course_number = '" _
 		& Request.QueryString("course_number") _
 		& "' AND discipline = '" & Request.QueryString("discipline") & "'"
-	Set rs = db.Execute(query)	
+	Set rs = db.Execute(query)
+	title = Request.QueryString("action") & " " & rs("title")
 end if
+
+response.write title
 %>
+
+<!--#include virtual="/header_end.inc"-->
 
 <!-- DELETION FORM --------------------------------------->
 
@@ -52,136 +55,148 @@ from the course listing.
 </form>
 </center>
 
-<!-- MODIFY FORM ----------------------------------------->
-
 <% else %>
 
-<form action="engr_course_<%=form%>.asp" method="post">
+<!-- MODIFY FORM ----------------------------------------->
 
+<form action="engr_course_<%=form%>.asp" method="post">
 <center>
-<table cellspacing=0 cellpadding=3 border=0>
+<table cellspacing=0 cellpadding=3 border=0 width=400>
 <tr>
-   <td colspan=4 align=center bgcolor="#800000">
-	<font face="arial" color="#ffffff">CRN</font></td>
-   <td colspan=6 align=center bgcolor="#800000">
-	<font face="arial" color="#ffffff">Title</font></td>
-   <td colspan=2 align=center bgcolor="#800000">
-	<font face="arial" color="#ffffff">Credits</font></td>
+   <td colspan=4 align=center <%=light%>>
+	<font face="arial"><b>CRN</b></font></td>
+   <td colspan=6 align=center <%=light%>>
+	<font face="arial"><b>Title</b></font></td>
+   <td colspan=2 align=center <%=light%>>
+	<font face="arial"><b>Credits</b></font></td>
 <tr>
    <td colspan=4 align=center bgcolor="#c0c0c0">
-	<input type="text" name="crn" size=5 <%if fill=1 then%>value="<%=rs("crn")%>"><%end if%></td>
+	<input type="text" name="crn" size=5 <%if fill=1 then%>value="<%=rs("crn")%>"<%end if%>></td>
    <td colspan=6 align=center bgcolor="#c0c0c0">
-	<input type="text" name="title" size=30 <%if fill=1 then%>value="<%=rs("title")%>"><%end if%></td>
+	<input type="text" name="title" size=30 <%if fill=1 then%>value="<%=rs("title")%>"<%end if%>></td>
    <td colspan=2 align=center bgcolor="#c0c0c0">
-	<input type="text" name="credits" size=1 <%if fill=1 then%>value="<%=rs("credits")%>"><%end if%></td>
+	<input type="text" name="credits" size=1 <%if fill=1 then%>value="<%=rs("credits")%>"<%end if%>></td>
 <tr>
-   <td colspan=4 align=center bgcolor="#800000">
-	<font face="arial" color="#ffffff">Discipline</font></td>
-   <td colspan=4 align=center bgcolor="#800000">
-	<font face="arial" color="#ffffff">Number - Section</font></td>
-   <td colspan=4 align=center bgcolor="#800000">
-	<font face="arial" color="#ffffff">Instructor*</font></td>
+   <td colspan=4 align=center <%=light%>>
+	<font face="arial"><b>Discipline</b></font></td>
+   <td colspan=4 align=center <%=light%>>
+	<font face="arial"><b>Number - Section</b></font></td>
+   <td colspan=4 align=center <%=light%>>
+	<font face="arial"><b>Instructor*</b></font></td>
 <tr>
    <td colspan=4 align=center bgcolor="#c0c0c0">
-	<input type="text" name="discipline" size=5 <%if fill=1 then%>value="<%=rs("discipline")%>"><%end if%></td>
+	<input type="text" name="discipline" size=5 <%if fill=1 then%>value="<%=rs("discipline")%>"<%end if%>></td>
    <td colspan=4 align=center bgcolor="#c0c0c0">
 	<input type="text" name="course_number" size=7 <%if fill=1 then%>value="<%=rs("course_number")%>"<%end if%>> - <input type="text" name="section" size=7 <%if fill=1 then%>value="<%=rs("section")%>"<%end if%>></td>
    <td colspan=4 align=center bgcolor="#c0c0c0">
 	<select name="instructor"><option value="">Unspecified
-
 <%
-query = "SELECT email_name, name_first, name_last, type " _
-	& "FROM employee " _
-	& "WHERE college='Engineering' AND type='faculty' " _
-	& "ORDER BY name_last"
-Set prof = db.Execute(query)
-Do While Not prof.EOF
-	response.write "<option value='" & prof("email_name") & "'>"
-	if fill = 1 then
-		if prof("email_name") = rs("instructor") then
-			response.write "selected"
+	query = "SELECT email_name, name_first, name_last, type " _
+		& "FROM employee " _
+		& "WHERE college='Engineering' AND type='faculty' " _
+		& "ORDER BY name_last"
+	Set prof = db.Execute(query)
+	Do While Not prof.EOF
+		response.write "<option value='" & prof("email_name") & "'>"
+		if fill = 1 then
+			if prof("email_name") = rs("instructor") then
+				response.write "selected"
+			end if
 		end if
-	end if
-	response.write prof("name_first") & " " & prof("name_last")
-prof.MoveNext
-Loop
-prof.Close
+		response.write prof("name_first") & " " & prof("name_last")
+		prof.MoveNext
+	Loop
+	prof.Close
 %>
    </select>
    </td>
 <tr>
-   <td colspan=12 align=center bgcolor="#800000">
-	<font face="arial" color="#ffffff">Current Schedule</font></td>
+   <td colspan=12 align=center <%=light%>>
+	<font face="arial"><b>Current Schedule</b></font></td>
 <tr>
-   <td colspan=4 align=right bgcolor="#800000">
-	<font face="arial" size=2 color="#ffffff">Dates</font></td>
-   <td colspan=8 bgcolor="#c0c0c0">
+   <td colspan=3 align=right <%=light%>>
+	<font face="arial" size=2><b>Dates</b></font></td>
+   <td colspan=9 bgcolor="#c0c0c0">
 	<input type="text" name="course_date" <%if fill=1 then%>value="<%=rs("course_date")%>"<%end if%> size=30></td>
 <tr>
-   <td colspan=4 align=right bgcolor="#800000">
-	<font face="arial" size=2 color="#ffffff">Times</font></td>
-   <td colspan=8 bgcolor="#c0c0c0">
+   <td colspan=3 align=right <%=light%>>
+	<font face="arial" size=2><b>Times</b></font></td>
+   <td colspan=9 bgcolor="#c0c0c0">
 	<input type="text" name="course_time" <%if fill=1 then%>value="<%=rs("course_time")%>"<%end if%> size=30></td>
 <tr>
-   <td colspan=12 align=center bgcolor="#800000">
-	<font face="arial" color="#ffffff">Future Schedule</font></td>
+   <td colspan=12 align=center <%=light%>>
+	<font face="arial"><b>Future Schedule</b></font></td>
 <tr>
-   <td colspan=4 align=center bgcolor="#eeeeee">
-	<font face="arial">1998</font></td>
-   <td colspan=4 align=center bgcolor="#c0c0c0">
-	<font face="arial">1999</font></td>
-   <td colspan=4 align=center bgcolor="#eeeeee">
-	<font face="arial">2000</font></td>
-<tr>
-   <td colspan=2 align=center bgcolor="#eeeeee" width=65>
-	<font face="arial" size=1>Spring</font></td>
-   <td colspan=2 align=center bgcolor="#eeeeee" width=65>
-	<font face="arial" size=1>Fall</font></td>
-   <td colspan=2 align=center bgcolor="#c0c0c0" width=65>
-	<font face="arial" size=1>Spring</font></td>
-   <td colspan=2 align=center bgcolor="#c0c0c0" width=65>
-	<font face="arial" size=1>Fall</font></td>
-   <td colspan=2 align=center bgcolor="#eeeeee" width=65>
-	<font face="arial" size=1>Spring</font></td>
-   <td colspan=2 align=center bgcolor="#eeeeee" width=65>
-	<font face="arial" size=1>Fall</font></td>
-<tr>
-   <td align=center bgcolor="#eeeeee">
-	<font face="arial" size=1>L</font></td>
-   <td align=center bgcolor="#eeeeee">
-	<font face="arial" size=1>V</font></td>
-   <td align=center bgcolor="#eeeeee">
-	<font face="arial" size=1>L</font></td>
-   <td align=center bgcolor="#eeeeee">
-	<font face="arial" size=1>V</font></td>
-   <td align=center bgcolor="#c0c0c0">
-	<font face="arial" size=1>L</font></td>
-   <td align=center bgcolor="#c0c0c0">
-	<font face="arial" size=1>V</font></td>
-   <td align=center bgcolor="#c0c0c0">
-	<font face="arial" size=1>L</font></td>
-   <td align=center bgcolor="#c0c0c0">
-	<font face="arial" size=1>V</font></td>
-   <td align=center bgcolor="#eeeeee">
-	<font face="arial" size=1>L</font></td>
-   <td align=center bgcolor="#eeeeee">
-	<font face="arial" size=1>V</font></td>
-   <td align=center bgcolor="#eeeeee">
-	<font face="arial" size=1>L</font></td>
-   <td align=center bgcolor="#eeeeee">
-	<font face="arial" size=1>V</font></td>
-<tr>
+<%
+' write years
 
-<% for each x in Application("engineering_dates") %>
-   <td bgcolor="#c0c0c0" align=center>
-	<input type="checkbox" name="<%=x%>" <%if fill=1 then%><%if rs(x) = "True" then%>checked<%end if%><%end if%>></td>
-<% next %>
+	n = 1
+	for each y in Application("years")
+		if n mod 2 <> 0 then
+			color = "c0c0c0"
+		else
+			color = "dddddd"
+		end if
+		response.write "<td colspan='4' align='center'" _
+			& " bgcolor='#" & color & "'>" _
+			& "<font face='arial'>" & y & "</font></td>" & VbCrLf
+		n = n + 1
+	next
+
+' write semesters
+
+	response.write "<tr>"
+	
+	n = 1
+	for each y in Application("years")
+		if n mod 2 <> 0 then
+			color = "c0c0c0"
+		else
+			color = "dddddd"
+		end if
+		for each s in Application("sems")
+			response.write "<td colspan='2' align='center'" _
+				& " bgcolor='#" & color & "'>" _
+				& "<font face='arial' size=2>" & s & "</font></td>" & VbCrLf
+		next
+		n = n + 1
+	next
+
+	response.write "<tr>"
+
+' write media types
+
+	n = 1
+	for each y in Application("years")
+		if n mod 2 <> 0 then
+			color = "c0c0c0"
+		else
+			color = "dddddd"
+		end if
+		for each s in Application("sems")
+			for each m in Application("media")
+				response.write "<td align='center'" _
+					& " bgcolor='#" & color & "' width='8.3333333%'>" _
+					& "<font face='arial' size=1>" & m & "</font><br>" _
+					& "<input type='checkbox' name='" _
+					& s & "_" & y & "_" & m & "'"
+				if fill = 1 then
+					if rs(s & "_" & y & "_" & m) = "True" then
+						response.write " checked"
+					end if
+				end if
+				response.write "></td>" & VbCrLf
+			next
+		next
+		n = n + 1
+	next
+%>
 
 <tr>
-   <td colspan=12 align=center bgcolor="#800000">
-	<font face="arial" color="#ffffff">Description</font></td>
+   <td colspan=12 align=center <%=light%>>
+	<font face="arial"><b>Description</b></font></td>
 <tr>
-   <td colspan=12 bgcolor="#c0c0c0" align=center><textarea name="description" cols=45 rows=3><%if fill=1 then%><%=rs("description")%><%end if%></textarea></td>
+   <td colspan=12 bgcolor="#c0c0c0" align=center><textarea name="description" cols=45 rows=3 wrap="virtual"><%if fill=1 then%><%=rs("description")%><%end if%></textarea></td>
 <tr>
 	<td colspan=6 bgcolor="#c0c0c0">
 	<font size=1 face="arial">Prerequisites</font>
@@ -190,6 +205,10 @@ prof.Close
 	<td colspan=6 bgcolor="#c0c0c0" align=right>
 	<input type="submit" value="<%=Request.QueryString("action")%>">
    </td>
+<tr>
+	<td colspan=12><font size=2>
+*If the professor who teaches this class is employed at the Boise Center but not listed here you will first need to <a href="/employee/edit.asp?action=add&type=faculty&college=Engineering">add them to the database of Boise Center employees</a>.
+	</td>
 </table>
 </center>
 
@@ -200,5 +219,4 @@ if fill=1 then rs.Close
 db.Close
 %>
 
-</body>
-</html>
+<!--#include virtual="/footer.inc"-->

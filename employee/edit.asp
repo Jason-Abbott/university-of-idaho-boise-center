@@ -1,13 +1,8 @@
 <!-- 
-Copyright 1997 Jason Abbott (jabbott@uidaho.edu)
-Last updated 12/12/97
+Copyright 1999 Jason Abbott (jabbott@uidaho.edu)
+Last updated 02/05/99
 -->
 
-<html>
-<body link="#800000" vlink="#800000" alink="#E4C721" bgcolor="#FFFFFF">
-<center>
-
-<!--#include file="../authenticate.inc"-->
 <%
 dim fill, db, rs, form, i, college, college_list
 
@@ -16,14 +11,16 @@ dim fill, db, rs, form, i, college, college_list
 ' which can't include employee_type
 
 if Request.QueryString("action") = "add" then
-   form = "added"
-	Session("type") = Request.QueryString("type")
+
+ 	form = "added"
+ 	Session("type") = Request.QueryString("type")
 	college = Request.QueryString("college")
 
 ' the fill variable determines whether the form
 ' should be populated with data
 	
    fill = 0
+	title = "Add new " & college & " " & Session("type") & " member"
 else
    form = "updated"
    fill = 1
@@ -35,19 +32,13 @@ else
 	
 	Session("type") = rs("type")
 	college = rs("college")
+	title = Request.QueryString("action") & " " & rs("name_first") & " " & rs("name_last")
 end if
-
-' create an array of college choices
-
-college_list = array( _
-	"Agriculture", _
-	"Engineering", _
-	"Education", _
-	"Forestry", _
-	"Law", _
-	"Letters and Sciences", _
-	"Other")
 %>
+
+<!--#include virtual="/header_start.inc"-->
+<%=title%>
+<!--#include virtual="/header_end.inc"-->
 
 <!-- DELETION FORM --------------------------------------->
 
@@ -73,50 +64,60 @@ from the <%=rs("type")%> database.
 
 <form action="<%=form%>.asp" method="post">
 
+<center>
 <table cellspacing=0 cellpadding=3 border=0>
 
 <!-- name -->
 
 <tr>
-   <td colspan=3 bgcolor="#800000" align=center>
-	<font face="arial" color="#FFFFFF">Name</td>
+   <td colspan=2 align="center" <%=light%>>
+	<font face="arial"><b>Name</b></font></td>
 <tr>
-   <td colspan=3 bgcolor="#C0C0C0" align=center><font face="arial" size=1>
-
+   <td colspan=2 align="center" bgcolor="#C0C0C0">
+	
 <% if Session("type") = "faculty" then %>	
-   Title <input type="text" name="title" <%if fill=1 then%>value="<%=rs("title")%>"<%end if%> size=4>
+   <font face="arial" size=1>Title</font>
+	<input type="text" name="title" <%if fill=1 then%>value="<%=rs("title")%>"<%end if%> size=4>
 <% end if %>
 
-   First <input type="text" name="name_first" <%if fill=1 then%>value="<%=rs("name_first")%>"<%end if%> size=10>
-   Last <input type="text" name="name_last" <%if fill=1 then%>value="<%=rs("name_last")%>"<%end if%> size=10>
-   </td>
+   <font face="arial" size=1>First</font>
+	<input type="text" name="name_first" <%if fill=1 then%>value="<%=rs("name_first")%>"<%end if%> size=10>
+   <font face="arial" size=1>Last</font>
+	<input type="text" name="name_last" <%if fill=1 then%>value="<%=rs("name_last")%>"<%end if%> size=10></td>
 
 <!-- contact information -->
 
 <tr>
-   <td colspan=3 bgcolor="#800000" align=center>
-	<font face="arial" color="#FFFFFF">Contact Information</td>
+   <td colspan=2 align="center" <%=light%>>
+	<font face="arial"><b>Contact Information</b></font></td>
 <tr>
-   <td align=center bgcolor="#C0C0C0" colspan=3>
+   <td align="center" colspan=2 bgcolor="#C0C0C0">
 	<font face="arial" size=2>
-	(208) 364-<input type="text" name="phone" <%if fill=1 then%>value="<%=rs("phone")%>"<%end if%> size=4>     
-   <input type="text" name="email_name" <%if fill=1 then%>value="<%=rs("email_name")%>"<%end if%> size=10>@<input type="text" name="email_site" <%if fill=1 then%>value="<%=rs("email_site")%>"<%end if%> size=25></font></td>
+	(208) 364-</font><input type="text" name="phone" <%if fill=1 then%>value="<%=rs("phone")%>"<%end if%> size=4>     
+   <input type="text" name="email_name" <%if fill=1 then%>value="<%=rs("email_name")%>"<%end if%> size=10>@<input type="text" name="email_site" <%if fill=1 then%>value="<%=rs("email_site")%>"<%end if%> size=25></td>
+
 
 <!-- position -->
 
 <tr>
-   <td bgcolor="#800000" align=right>
-	<font face="arial" size="2" color="#FFFFFF">Position</td>
-   <td bgcolor="#C0C0C0" colspan=2><input type="text" name="position" <%if fill=1 then%>value="<%=rs("position")%>"<%end if%> size=40></td>
+   <td align="RIGHT" <%=light%>>
+	<font face="arial" size=2><b>Position</b></font></td>
+   <td bgcolor="#C0C0C0">
+	<input type="text" name="position" <%if fill=1 then%>value="<%=rs("position")%>"<%end if%> size=40></td>
 
 <!-- college -->
 
 <tr>
-   <td bgcolor="#800000" align=right>
-	<font face="arial" size="2" color="#FFFFFF">College</td>
-   <td bgcolor="#C0C0C0" colspan=2>
+   <td align=right <%=light%>>
+	<font face="arial" size="2"><b>College</b></font></td>
+   <td bgcolor="#C0C0C0">
 	<select name="college">
 <%
+' The colleges session variable is set in the authenticate.inc
+' file in the web root.  It's simply a list of colleges in the
+' center.
+
+	college_list = Session("colleges")
 	for each i in college_list
 		response.write "<option"
 		if college = i then
@@ -135,28 +136,27 @@ from the <%=rs("type")%> database.
 <!-- discipline -->
 
 <tr>
-   <td bgcolor="#800000" align=right>
-	<font face="arial" size="2" color="#FFFFFF">Discipline</td>
-   <td bgcolor="#C0C0C0" colspan=2><input type="text" name="area" <%if fill=1 then%>value="<%=rs("area")%>"<%end if%> size=40></td>
+   <td align=right <%=light%>>
+	<font face="arial" size="2"><b>Discipline</b></font></td>
+   <td bgcolor="#C0C0C0"><input type="text" name="area" <%if fill=1 then%>value="<%=rs("area")%>"<%end if%> size=40></td>
 
 <!-- education -->
 
 <tr>
-   <td colspan=3 bgcolor="#800000" align=center>
-	<font face="arial" color="#FFFFFF">Education</td>
+   <td colspan=2 align=center <%=light%>>
+	<font face="arial"><b>Education</b></font></td>
 <tr>
-   <td align=center bgcolor="#C0C0C0"><font face="arial" size=1>Degree(s)</td>
-   <td align=center bgcolor="#C0C0C0"><font face="arial" size=1>Location</td>
-   <td align=center bgcolor="#C0C0C0"><font face="arial" size=1>Date</td>
+   <td align=center bgcolor="#C0C0C0"><font face="arial" size=1>Degree(s)</font></td>
+   <td align=right bgcolor="#C0C0C0"><font face="arial" size=1>
+	Location &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Date &nbsp;</font>
+	</td>
 
 <%		for i = 1 to 4 %>
 
 <tr>
-   <td align=center bgcolor="#C0C0C0"><b><%=i%></b>
-	<input type="text" name="degree<%=i%>_type" <%if fill=1 then%>value="<%=rs("degree"&i&"_type")%>"<%end if%> size=10></td>
-   <td align=center bgcolor="#C0C0C0">
-	<input type="text" name="degree<%=i%>_place" <%if fill=1 then%>value="<%=rs("degree"&i&"_place")%>"<%end if%> size=40></td>
-   <td align=center bgcolor="#C0C0C0">
+   <td colspan=2 align=center bgcolor="#C0C0C0"><b><%=i%></b>
+	<input type="text" name="degree<%=i%>_type" <%if fill=1 then%>value="<%=rs("degree"&i&"_type")%>"<%end if%> size=10> 
+	<input type="text" name="degree<%=i%>_place" <%if fill=1 then%>value="<%=rs("degree"&i&"_place")%>"<%end if%> size=40> 
 	<input type="text" name="degree<%=i%>_date" <%if fill=1 then%>value="<%=rs("degree"&i&"_date")%>"<%end if%> size=4></td>
 
 <%		next %>
@@ -164,38 +164,37 @@ from the <%=rs("type")%> database.
 <!-- emphasis -->
 
 <tr>
-   <td colspan=3 bgcolor="#800000" align=center>
-	<font face="arial" color="#FFFFFF">Emphasis</font></td>
+   <td colspan=2 align=center <%=light%>>
+	<font face="arial"><b>Emphasis</b></font></td>
 <tr>
-   <td colspan=3 align=center bgcolor="#C0C0C0"><textarea name="emphasis" cols=50 rows=4><%if fill=1 then%><%=rs("emphasis")%><%end if%></textarea></td>
+   <td colspan=2 align=center bgcolor="#C0C0C0"><textarea name="emphasis" cols=50 rows=10 wrap="virtual"><%if fill=1 then%><%=rs("emphasis")%><%end if%></textarea></td>
 
 <!-- experience -->
 
 <tr>
-   <td colspan=3 bgcolor="#800000" align=center>
-	<font face="arial" color="#FFFFFF">Experience</font></td>
+   <td colspan=2 align=center <%=light%>>
+	<font face="arial"><b>Experience</b></font></td>
 <tr>
    <td align=center bgcolor="#C0C0C0"><font face="arial" size=1>Time</td>
    <td align=center bgcolor="#C0C0C0"><font face="arial" size=1>Description</td>
-   <td bgcolor="#C0C0C0"> </td>
 
 <%		for i = 1 to 4 %>
 
 <tr>
-   <td bgcolor="#C0C0C0" colspan=3><b><%=i%></b>
+   <td bgcolor="#C0C0C0" colspan=2><b><%=i%></b>
 	<input type="text" name="exp<%=i%>_time" <%if fill=1 then%>value="<%=rs("exp"&i&"_time")%>"<%end if%> size=20><br>
-   <center><textarea name="exp<%=i%>_desc" cols=50 rows=2><%if fill=1 then%><%=rs("exp"&i&"_desc")%><%end if%></textarea></center></td>
+   <center><textarea name="exp<%=i%>_desc" cols=50 rows=2 wrap="virtual"><%if fill=1 then%><%=rs("exp"&i&"_desc")%><%end if%></textarea></center></td>
 
 <%		next %>
 
 <!-- scholarship -->
 
 <tr>
-   <td colspan=3 bgcolor="#800000" align=center>
-	<font face="arial" color="#FFFFFF">Scholarship</font></td>
+   <td colspan=2 align=center <%=light%>>
+	<font face="arial"><b>Scholarship</b></font></td>
 <tr>
-   <td colspan=3 align=center bgcolor="#C0C0C0">
-	<textarea name="scholarship" cols=50 rows=4><%if fill=1 then%><%=rs("scholarship")%><%end if%></textarea></td>
+   <td colspan=2 align=center bgcolor="#C0C0C0">
+	<textarea name="scholarship" cols=50 rows=10 wrap="virtual"><%if fill=1 then%><%=rs("scholarship")%><%end if%></textarea></td>
 
 <!-- STAFF MODIFY ---------------------------------------->
 
@@ -204,13 +203,13 @@ from the <%=rs("type")%> database.
 <!-- duties -->
 
 <tr>
-   <td colspan=3 bgcolor="#800000" align=center>
-	<font face="arial" color="#FFFFFF">Duties</td>
+   <td colspan=2 align=center <%=light%>>
+	<font face="arial"><b>Duties</b></font></td>
 
 <%		for i = 1 to 6 %>
 
 <tr>
-   <td colspan=3 align=center bgcolor="#C0C0C0"><b><%=i%></b>
+   <td colspan=2 align=center bgcolor="#C0C0C0"><b><%=i%></b>
 	<input type="text" name="duty<%=i%>" <%if fill=1 then%>value="<%=rs("duty"&i)%>"<%end if%> size=50></td>
 
 <%		next %>
@@ -218,13 +217,13 @@ from the <%=rs("type")%> database.
 <!-- projects -->
 
 <tr>
-   <td colspan=3 bgcolor="#800000" align=center>
-	<font face="arial" color="#FFFFFF">Projects</td>
+   <td colspan=2 align=center <%=light%>>
+	<font face="arial"><b>Projects</b></font></td>
 
 <%		for i = 1 to 6 %>
 
 <tr>
-   <td colspan=3 align=center bgcolor="#C0C0C0"><b><%=i%></b>
+   <td colspan=2 align=center bgcolor="#C0C0C0"><b><%=i%></b>
 	<input type="text" name="project<%=i%>" <%if fill=1 then%>value="<%=rs("project"&i)%>"<%end if%> size=50></td>
 
 <% 	next %>
@@ -236,40 +235,40 @@ from the <%=rs("type")%> database.
 <!-- custom links -->
 
 <tr>
-   <td colspan=3 align=center bgcolor="#800000">
-	<font face="arial" color="#FFFFFF">Custom Links</font></td>
+   <td colspan=2 align=center <%=light%>>
+	<font face="arial"><b>Custom Links</b></font></td>
 
 <%		for i = 1 to 6 %>
 
 <tr>
-   <td bgcolor="#C0C0C0" colspan=3 align=center><b><%=i%></b>
+   <td bgcolor="#C0C0C0" colspan=2 align=center><b><%=i%></b>
 	<input type="text" name="site<%=i%>_description" <%if fill=1 then%>value="<%=rs("site"&i&"_description")%>"<%end if%> size=15>
-   <font face="arial" size=2>http://<input type="text" name="site<%=i%>_url" <%if fill=1 then%>value="<%=rs("site"&i&"_url")%>"<%end if%> size=30></font></td>
+   <font face="arial" size=2>http://</font><input type="text" name="site<%=i%>_url" <%if fill=1 then%>value="<%=rs("site"&i&"_url")%>"<%end if%> size=30></td>
 
 <%		next %>
 
 <tr>
-   <td colspan=3 bgcolor="#800000" align=center>
-	<font face="arial" color="#FFFFFF">Leave these as is if unsure
-	</font></td>
+   <td colspan=2 align=center <%=light%>>
+	<font face="arial"><b>Leave these as is if unsure</b></font></td>
 
 <!-- room number -->
 
 <tr>
-	<td bgcolor="#800000" align=right>
-	<font face="arial" color="#FFFFFF" size=2>Room</font></td>
-	<td bgcolor="#c0c0c0" colspan=2><font face="arial" size=2>
+	<td align=right <%=light%>>
+	<font face="arial" size=2><b>Room</b></font></td>
+	<td bgcolor="#c0c0c0">
 	<input type="text" name="room" <%if fill=1 then%>value="<%=rs("room")%>"<%end if%> size=2>
-	(<a href="./map/floor_med.asp">Here</a> is a map, or use "7th" if on 7th floor)
+	<font face="arial" size=2>
+	(<a href="/map/floor_med.asp">Here</a> is a map, or use "7th" if on 7th floor)
 	</font></td>
 
 <!-- ip address -->
 
 <tr>
-	<td bgcolor="#800000" align=right>
-	<font face="arial" color="#FFFFFF" size=2>IP</font></td>
-	<td bgcolor="#c0c0c0" colspan=2><font face="arial" size=2>
-	129.101.93.<input type="text" name="ip" value="
+	<td align=right <%=light%>>
+	<font face="arial" size=2><b>IP</b></font></td>
+	<td bgcolor="#c0c0c0"><font face="arial" size=2>
+	129.101.93.</font><input type="text" name="ip" value="
 <%
 		if fill=1 then
 			response.write rs("ip")
@@ -284,26 +283,49 @@ from the <%=rs("type")%> database.
 <!-- hardware address -->
 
 <tr>
-	<td bgcolor="#800000" align=right>
-	<font face="arial" color="#FFFFFF" size=2>MAC</font></td>
-	<td bgcolor="#c0c0c0" colspan=2><font face="arial" size=2>
-	<input type="text" name="mac" <%if fill=1 then%>value="<%=rs("mac")%>"<%end if%> size=12>
+	<td align=right <%=light%>>
+	<font face="arial" size=2><b>MAC</b></font></td>
+	<td bgcolor="#c0c0c0" colspan=2>
+	<input type="text" name="mac" <%if fill=1 then%>value="<%=rs("mac")%>"<%end if%> size=14>
+	<font face="arial" size=2>
 	(Ethernet address)
+	</font></td>
+
+<!-- patch panel port -->
+
+<tr>
+	<td align=right <%=light%>>
+	<font face="arial" size=2><b>Port</b></font></td>
+	<td bgcolor="#c0c0c0" colspan=2>
+	<input type="text" name="port" value="<%if fill=1 then%><%=rs("port")%><%else%>0<%end if%>" size=3>
+	<font face="arial" size=2>
+	(Patch panel port)
+	</font></td>
+
+<!-- machine name -->
+
+<tr>
+	<td align=right <%=light%>>
+	<font face="arial" size=2><b>machine</b></font></td>
+	<td bgcolor="#c0c0c0" colspan=2>
+	<input type="text" name="mach_name" <%if fill=1 then%>value="<%=rs("mach_name")%>"<%end if%> size=10>
+	<font face="arial" size=2>
+	(Machine Name)
 	</font></td>
 
 <!-- submit button -->
 
 <tr>
-	<td bgcolor="#800000" align=right>&nbsp;</td>
-	<td bgcolor="#c0c0c0" align=right colspan=2>
+	<td align=right <%=light%>>&nbsp;</td>
+	<td bgcolor="#c0c0c0" align=right>
 	<input type="submit" value="<%=Request.QueryString("action")%>"></td>
 
 <!-- last updated information -->
 
 <%		if fill = 1 then %>
 <tr>
-	<td colspan=3 bgcolor="#800000" align=center>
-	<font color="#ffffff" size=1 face="arial">
+	<td colspan=2 align=center <%=light%>>
+	<font size=1 face="arial">
 	(Last updated <%=rs("update_time")%> from machine <%=rs("update_machine")%>)
 	</font></td>
 <%		end if %>
@@ -313,5 +335,4 @@ from the <%=rs("type")%> database.
 
 <% end if %>
 
-</body>
-</html>
+<!--#include virtual="/footer.inc"-->
