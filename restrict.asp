@@ -1,0 +1,1 @@
+<% if Session("user") = "guest" then response.redirect "./error.asp" %>

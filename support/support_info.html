@@ -1,0 +1,150 @@
+<!-- 
+Copyright 1998 Jason Abbott (jabbott@uidaho.edu)
+Last updated 01/29/98
+-->
+
+<html>
+<body link="#800000" vlink="#800000" alink="#E4C721" bgcolor="#FFFFFF">
+
+<font size=5><a name="top">T</a></font>his page is provided as a resource to support personnel wishing to assist Boise Center employees.
+<ul>
+<li><a href="#map">Drive Mapping</a>
+<li><a href="#policies">Policies and profiles</a>
+<li><a href="#back">Backup</a>
+<li><a href="#lab">Lab</a>
+</ul>
+<p>
+Engineering employees are networked with a Windows NT Server.  All other employees, which includes Education and Agriculture, are on a Novell network, served by Fire.  Our NetWare tree, <b><tt>uiboise</tt></b>, contains two contexts, <b><tt>staff</tt></b> and <b><tt>student</tt></b>.  The student context is used primarily in the lab.  All other machines default to the staff context.  The staff context is broken down into three user groups, <b><tt>ad</tt></b>, <b><tt>ag</tt></b> and <b><tt>ed</tt></b>.  All employees are members of one of these groups according to who they are most likely to share network resources with.
+<p>
+<font size=4 face="arial">Drive Mapping</font>
+<font size=2>[<a href="#top">top</a>]</font>
+<br>
+<a name="map">All</a> NetWare users, as a minimum, have these drives mapped:
+<p>
+<center>
+<table border=0 cellspacing=0>
+<tr>
+	<td align=center bgcolor="#800000">
+	<font face="arial" color="#ffffff"><b>Letter</b></font></td>
+	<td align=center bgcolor="#800000">
+	<font face="arial" color="#ffffff"><b>UNC</b></font></td>
+	<td align=center bgcolor="#800000">
+	<font face="arial" color="#ffffff"><b>Description</b></font></td>
+<tr>
+	<td align=center>G:</td>
+	<td>//fire/user/files/[username]</td>
+	<td>Personal files</td>
+<tr>
+	<td align=center>H:</td>
+	<td>//fire/user/profiles/[username]</td>
+	<td>Home directory</td>
+<tr>
+	<td align=center>I:</td>
+	<td>//fire/user/files/clipart</td>
+	<td>Shared clipart</td>
+<tr>
+	<td align=center>L:</td>
+	<td>//fire/user/files/[group name]</td>
+	<td>Shared files</td>
+<tr>
+	<td align=center>T:</td>
+	<td>//fire/temp</td>
+	<td>Temp drive</td>
+</table>
+</center>
+<p>
+An icon on their desktop refers to the <b><tt>G</tt></b> drive as "My Documents."  A network policy also establishes the <b><tt>G</tt></b> drive as the default location for documents, and their word processors are configured to look to <b><tt>G</tt></b> first for saving and opening documents.  Saving documents to this network location facilitates roaming profiles and backing up.
+<p>
+The <b><tt>H</tt></b> drive contains e-mail and user preferences in these directories:  <b><tt>/start menu</tt></b>, <b><tt>/desktop</tt></b>, <b><tt>/favorites</tt></b>, <b><tt>/mail</tt></b> and <b><tt>/recent</tt></b>.  This is configured by a policy setting (see below).  The user should never need to interact with their <b><tt>H</tt></b> drive.
+<p>
+The <b><tt>I</tt></b> drive contains clipart.  At one point multiple users were requesting additional clipart, on the order of hundreds of megabytes, so a shared drive was created specifically for clipart rather than adding that data to each of their individual machines.  Each user should still have on their machines the basic clipart that came with their software.
+<p>
+The <b><tt>L</tt></b> drive is mapped according to the user's group membership.  A member of the ed group, for example, will have an <b><tt>L</tt></b> drive that maps to <b><tt>//fire/user/files/ed</tt></b>.  An icon on the desktop refers to the <b><tt>L</tt></b> drive as "Shared Documents."  It was necessary to create separate groups for sharing because some users wanted to share files with only a select number of people.  The letter <b><tt>L</tt></b> was chosen to be consistent with the mapping used in Engineering.
+<p>
+The <b><tt>T</tt></b> drive is visible to all users in all groups and contexts.  Since other shares already exist, its primary use is to facilitate file sharing between the lab (e.g. scanner) and employees and should be thought of as strictly temporary storage since anyone using the lab can read and delete files on this drive.
+<p>
+<font size=4 face="arial">Policies and Profiles</font>
+<font size=2>[<a href="#top">top</a>]</font>
+<br>
+<a name="policies">Policies</a> and roaming profiles have been implemented for NetWare users.  Policy and profile information is stored in the file <b><tt>config.pol</tt></b> in <b><tt>//fire/sys</tt></b> and in users' home directories.  The policies reconfigure certain default Windows directories, as mentioned above.  They also prevent the user from making changes to certain hardware configurations.
+<p>
+Profiles allow users to log into computers other than their own yet still see and have access to their own files and settings.  This feature is frequently used at the reception desk, which is sometimes staffed by people who otherwise have their own computers.  It is also used and appreciated when a user's computer is down for maintenance.  They are able to log into someone else's computer and continue working with their files as if they were at their own machine.
+<p>
+<font size=4 face="arial">Backup</font>
+<font size=2>[<a href="#top">top</a>]</font>
+<br>
+<a name="back">So</a> that users can continue to work in the event of a network failure, a login script copies all files that have changed since the last login into the local directory <b><tt>c:\backup</tt></b>.  Files in the <b><tt>G</tt></b> drive are saved in the subdirectory <b><tt>[username]\files</tt></b> and files in the <b><tt>H</tt></b> drive are saved to <b><tt>[username]\profiles</tt></b>.  A log file, <b><tt>log.txt</tt></b>, is created listing the current date and time, the files that were copied and any errors.  The script shows up as "Backing up" when the user logs in.
+<hr>
+<font size=2>
+<pre>
+@echo off
+
+rem Batch file for backing up user's files and profiles
+rem 06/03/97 Jason Abbott
+
+IF EXIST c:\backup\%lname%\files\*.* GOTO COPY
+
+echo Now creating backup directories
+
+md c:\backup
+md c:\backup\%lname%
+md c:\backup\%lname%\files
+md c:\backup\%lname%\profiles
+
+echo Changing directory access
+
+attrib c:\backup +h +r
+
+:COPY
+
+echo Now backing up files ...
+
+p:\programf\dat >> c:\backup\log.txt
+echo Backup started by %lname% on machine %mac% >>c:\backup\log.txt
+echo  >>c:\backup\log.txt
+xcopy g:\*.* c:\backup\%lname%\files /d /e /c /h /r /k /y >> c:\backup\log.txt
+echo  >>c:\backup\log.txt
+xcopy h:\*.* c:\backup\%lname%\profiles /d /e /c /h /r /k /y >> c:\backup\log.txt
+echo ___________________________________________________ >>c:\backup\log.txt
+
+copy c:\backup\log.txt \\fire\user\logs\backup_%lname%.txt
+</pre>
+</font>
+<hr>
+<p>
+<font size=4 face="arial">Open Computer Lab</font>
+<font size=2>[<a href="#top">top</a>]</font>
+<br>
+<a name="lab">The</a> computer lab is open to all Boise Center students, staff and faculty.  It is comprised of 21 computers, of which 16 are Pentium 133's with 16MB of RAM and 5 are 486/66's with 16MB of RAM.  Of the Pentiums, one is at the instructor's station, and has a different video card that is compatible with the LCD projector there, and the other is in the back of the room at the scanning station, and is the only one with a 17" monitor.
+<p>
+Computer Services is able to exert direct control of the lab computers' configuration since these machines are configured by the same "Borg" scripts that are used on the Moscow campus.  Borg is a system that utilizes PC-Rdist to maintain a consistent configuration in the lab.  Whenever a user restarts or logs out of a machine it is assimilated.  That is, the contents of its hard drive are compared with an image on the server and discrepencies corrected so that the machine is an exact copy of the server image.  In this way, it is hoped that the machines are kept in a known good state.
+<p>
+There are four configuration types in our lab.  An image must be kept for each configuration type.  A base image is kept in <b><tt>//fire/win95/rdist/image/base</tt></b> for the files that are shared by all computers.  The files that are specific to the individual configurations are kept in directories under <b><tt>//fire/win95/rdist/machines</tt></b>, as indicated in this table:
+<p>
+<center>
+<table border=0 cellspacing=0>
+<tr>
+	<td align=center bgcolor="#800000">
+	<font face="arial" color="#ffffff"><b>Sub-directory</b></font></td>
+	<td align=center bgcolor="#800000">
+	<font face="arial" color="#ffffff"><b>Description</b></font></td>
+<tr>
+	<td>/att486</td>
+	<td>5 AT&T 486 computers</td>
+<tr>
+	<td>/g133</td>
+	<td>14 Gateway P133 computers</td>
+<tr>
+	<td>/g133oh</td>
+	<td>1 Gateway P133 with an overhead projector</td>
+<tr>
+	<td>/g133sj</td>
+	<td>1 Gateway P133 with a HP ScanJet</td>
+</table>
+</center>
+<p>
+Computers are associated with the proper image based on their MAC address.  Most problems with computers in the lab can be solved by rebooting the machine, resynchronizing them with their image.  Many times users do not log out and leave the machines in unstable states for subsequent users.
+<p>
+<center><font face="arial" color="#999999">Last updated January 29, 1998</font></center>
+</body>
+</html>
