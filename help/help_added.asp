@@ -1,84 +1,197 @@
-<!-- 
-Copyright 1998 Jason Abbott (jabbott@uidaho.edu)
-Last updated 05/19/98
--->
+<%
+' Copyright 1999 Jason Abbott (jabbott@uidaho.edu)
+' Last updated 01/27/99
 
-<html>
-<body link="#800000" vlink="#800000" alink="#E4C721" bgcolor="#FFFFFF">
+' if Session("user") = "guest" then response.redirect "/error.asp"
+
+' check form validity
+' if any manual fields have values then
+' make sure that they ALL have values
+
+if Request.Form("hname_first") <> "" or _
+	Request.Form("hname_last") <> "" or _
+	Request.Form("hemail_name") <> "" or _
+	Request.Form("hphone") <> "(208) 364-" then
+	if Request.Form("hname_first") = "" then
+		Session("form_errors") = "hname_first, "
+	end if
+	if Request.Form("hname_last") = "" then
+		Session("form_errors") = Session("form_errors") & "hname_last, "
+	end if
+	if Request.Form("hemail_name") = "" then
+		Session("form_errors") = Session("form_errors") & "hemail_name, "
+	end if
+	if Request.Form("hphone") = "(208) 364-" then
+		Session("form_errors") = Session("form_errors") & "hphone, "
+	end if
+	if Session("form_errors") <> "" then
+
+' put the form values in Session variable
+' so the user doesn't have to re-enter
+
+		for each x In Request.Form
+   		Session(x) = Request.Form(x)
+		next		
+		response.redirect "help_request.asp"
+	end if
+end if
+
+%>
+
+<!--#include virtual="/header_start.inc"-->
+Boise Center HelpDesk Addition
+<!--#include virtual="/header_end.inc"-->
 
 <%
-if Session("user") = "guest" then response.redirect "./error.asp"
 
-dim db, query
+dim db, query, rs, days, email_name, email_site, name_first, name_last
 
-' UPDATE DATABASE
+' open the connection to the database
 
 Set db = Server.CreateObject("ADODB.Connection")
 db.Open "bc"
+
+' values are either taken from the existing employee database
+' or from the form
+
+if Request.Form("hemail_name") <> "" then
+	email_name = Request.Form("hemail_name")
+	email_site = Request.Form("hemail_site")
+	name_first = Request.Form("hname_first")
+	name_last = Request.Form("hname_last")
+else
+	query = "SELECT * FROM employee WHERE " _
+		& "email_name = '" & Request.Form("submitter") & "'"
+	set rs = db.Execute(query)
+	email_name = rs("email_name")
+	email_site = rs("email_site")
+	name_first = rs("name_first")
+	name_last = rs("name_last")
+	rs.Close
+end if
+
+' UPDATE DATABASE
+' the submitter field is equal to the email name
+
 query = "INSERT INTO helpdesk (" _
 	& "submitter, " _
 	& "category, " _
 	& "description, " _
 	& "submit_time, " _
 	& "submit_machine, " _
-	& "status" _
+	& "status"
+	
+if Request.Form("due") <> "" then
+	query = query & ", due"
+end if
+
+if Request.Form("hemail_name") <> "" then
+	query = query & ", hname_first, " _
+		& "hname_last, " _
+		& "hemail_site, " _
+		& "hphone"
+end if
+
+query = query _
 	& ") VALUES ('" _
-	& Request.Form("submitter") & "', '" _
+	& email_name & "', '" _
 	& Request.Form("category") & "', '" _
 	& replace(Request.Form("description"), "'", "’") & "', '" _
 	& Now & "', '" _
 	& Request.ServerVariables("REMOTE_ADDR") & "', '" _
-	& "open')"
+	& "open'"
+
+if Request.Form("due") <> "" then
+	query = query & ", '" & Request.Form("due") & "'"
+end if
+
+if Request.Form("hemail_name") <> "" then
+	query = query & ", '" & Request.Form("hname_first") & "', '" _
+		& Request.Form("hname_last") & "', '" _
+		& Request.Form("hemail_site") & "', '" _
+		& Request.Form("hphone") & "'"
+end if
+
+query = query & ")"
+
+' send the query to the database
 
 db.Execute(query)
 
+' now that the record has been inserted into the database
+' let's see what id it was assigned
+
+query = "SELECT id, description FROM helpdesk " _
+	& "WHERE description='" & Request.Form("description") & "'"
+Set rs = db.Execute(query)
+
 ' NOTIFY TECHNICIANS BY MAIL
 
-query = "SELECT * FROM employee WHERE " _
-	& "email_name = '" & Request.Form("submitter") & "'"
+set JMail = Server.CreateObject("JMail.SMTPMail")
+' JMail.Logging = true
+JMail.ServerAddress = "borah.engboi.uidaho.edu"
+JMail.Sender = email_name & "@" & email_site
+JMail.SenderName = name_first & " " & name_last
+JMail.Subject = "Help Request"
+JMail.AddHeader "Originating-IP", Request.ServerVariables("REMOTE_ADDR")
+JMail.AddRecipientCC email_name & "@" & email_site
+%>
+<!--#include file="technician_mail.inc"-->
+<%
 
-set rs = db.Execute(query)
-
-Set mailer = Server.CreateObject("SMTPsvg.Mailer")
-mailer.FromName = rs("name_first") & " " & rs("name_last")
-mailer.FromAddress = rs("email_name") & "@" & rs("email_site")
-mailer.RemoteHost = "borah.engboi.uidaho.edu"
-mailer.AddRecipient "Jason Abbott","jabbott@uidaho.edu"
-mailer.AddRecipient "Diane Griffitts","dianeg@uidaho.edu"
-mailer.AddRecipient "Norm Galey","ngaley@uidaho.edu"
-mailer.AddCC rs("name_first") & " " & rs("name_last"), rs("email_name") & "@" & rs("email_site")
-mailer.Subject = "Help Request"
-
-body = "You have been asked to help with the following situation:" _
+body = "The following request for help has been entered into the database:" _
 	& VbCrLf & VbCrLf _
-	& "       Name: " & rs("name_first") & " " & rs("name_last") _
+	& "       Name: " & name_first & " " & name_last _
 	& VbCrLf _
 	& "   Category: " & Request.Form("category") _
-	& VbCrLf _
-	& "Description: "
+	& VbCrLf
+
+if Request.Form("due") <> "" then
+	days = DateDiff("d", Now(), Request.Form("due"))
+	if days < 3 then
+		JMail.Priority = 1
+	end if
+	body = body _
+	& "Complete by: " _
+	& WeekDayName(WeekDay(Request.Form("due"))) & ", " _
+	& MonthName(Month(Request.Form("due"))) & " " _
+	& Day(Request.Form("due")) & ", " _
+	& Year(Request.Form("due")) & " (in " & days & " days)" & VbCrLf
+end if
+
+body = body & " Request ID: " & rs("id") & VbCrLf & "Description: "
 
 if Request.Form("description") = "" then
-	body = body & rs("name_first") & " did not enter a description."
+	body = body & name_first & " did not enter a description."
 else
-	body = body & Request.Form("description")
+	body = body & VbCrLf & "----------------------------------------" _
+	& VbCrLf & Request.Form("description") & VbCrLf _
+	& "----------------------------------------"
 end if
 
-body = body & VbCrLf & VbCrLf & "This message was generated by the Boise Center Help Desk.  Please visit http://boise.uidaho.edu/help to submit a new request or review past or current requests."
+body = body & VbCrLf & VbCrLf & "This message was generated by the Boise Center Help Desk.  To check the status of your request at any time visit http://boise.uidaho.edu/help/help_detail.asp?id=" & rs("id") & "."
 
-mailer.BodyText = body
+' send out the mail
 
-mailer.SMTPLog = "c:\internet\mail\smtp.log"
-if Mailer.SendMail then
+JMail.Body = body
+on error resume next
+JMail.Execute
+if err = 0 then
 %>
-You request has been entered into the HelpDesk database and e-mail has been sent to the Boise Center technicians.  You should be receiving a copy of this e-mail.  If you do not, please check your <a href="./employee/detail.asp?email_name=<%=rs("email_name")%>">personal configuration</a> to confirm that your e-mail address is entered correctly.
 
-<% else %>
-	<!--#include file="smtp_log.inc"-->
+<font size=5>Y</font>our request has been entered into the HelpDesk database and e-mail has been sent to the Boise Center technicians.  You should be receiving a copy of this e-mail.
+<p>
+Your request ID is <%=rs("id")%>.  To view the status of your request see <a href="http://boise.uidaho.edu/help/help_detail.asp?id=<%=rs("id")%>">http://boise.uidaho.edu/help/help_detail.asp?id=<%=rs("id")%></a>.  Thank you for using the Boise Center help desk system.
+
 <%
+else
+	response.write err.description
 end if
+
+' close out the recordset and database
+
 rs.Close
 db.Close
 %>
 
-</body>
-</html>
+<!--#include virtual="/footer.inc"-->

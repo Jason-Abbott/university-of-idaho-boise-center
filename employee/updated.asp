@@ -1,8 +1,8 @@
 <%
-' Copyright 1997 Jason Abbott (jabbott@uidaho.edu)
+' Copyright 1999 Jason Abbott (jabbott@uidaho.edu)
 ' Last updated 12/12/97
 
-if Session("user") = "guest" then response.redirect "./error.asp"
+if Session("user") = "guest" then response.redirect "/error.asp"
 
 Set db = Server.CreateObject("ADODB.Connection")
 db.Open "bc"

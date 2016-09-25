@@ -1,51 +1,71 @@
 <!-- 
-Copyright 1998 Jason Abbott (jabbott@uidaho.edu)
-Last updated 05/18/98
+Copyright 1999 Jason Abbott (jabbott@uidaho.edu)
+Last updated 11/12/98
 -->
 
-<html>
-<body bgcolor="#FFFFFF" link="#800000" vlink="#800000" alink="#E4C721">
+<!--#include virtual="/header_start.inc"-->
+Boise Center HelpDesk Listing
+<!--#include virtual="/header_end.inc"-->
 
-<!--#include file="../authenticate.inc"-->
 <%
 dim combine, query, join, count
 combine = ""
 
 ' combine form elements in SQL
 
-if Not Request.Form("email_name") = "(list all)" then
+if Request.Form("email_name") <> "(list all)" then
 	query = "H.submitter ='" & Request.Form("email_name") & "'"
 	combine = " AND "
 end if
 
-if Not Request.Form("category") = "(list all)" then
+if Request.Form("category") <> "(list all)" then
 	query = query & combine & "H.category = '" & Request.Form("category") & "'"
 	combine = " AND "
 end if
 
-' if the values of open and closed are the same, whether
-' both checked or not checked, the SQL can skip filtering
-' on status altogether
-
-if Not (Request.Form("open") = Request.Form("closed")) then
-	if Request.Form("open") = "on" then
-		query = query & combine & "H.status = 'open'"
-		combine = " AND "
-	else
-		query = query & combine & "H.status = 'closed'"
-		combine = " AND "
-	end if
+if Request.Form("weeks") <> "" then
+	query = query & combine & "(H.submit_time BETWEEN #" _
+		& DateAdd("ww", -Request.Form("weeks"), now) & "# AND #" & now & "# OR " _
+		& "H.complete_time BETWEEN #" _
+		& DateAdd("ww", -Request.Form("weeks"), now) & "# AND #" & now & "#)"
+	combine = " AND "
 end if
 
-if Not Request.Form("description") = "" then
+' Do an SQL IN list for the status.  These are combined with commas.
+
+query = query & combine & "H.status IN ("
+
+if Request.Form("open") = "on" then
+   query = query & "'open'"
+   combine = ", "
+end if
+
+if Request.Form("pending") = "on" then
+   query = query & combine & "'pending'"
+   combine = ", "
+end if
+
+if Request.Form("closed") = "on" then
+   query = query & combine & "'closed'"
+end if
+
+query = query & ")"
+combine = " AND "
+
+' Do a wildcard match with entered description against DB description
+
+if Request.Form("description") <> "" then
 	query = query & combine & "H.description LIKE '%%" & Request.Form("description") & "%%'"
 end if
 
 ' link the helpdesk to the employee database
+' The left join includes all records from helpdesk
+' and only those employees in helpdesk.  Use a union
+' join to restrict further.
 
-join = "SELECT * FROM helpdesk H INNER JOIN employee E " _
+join = "SELECT * FROM helpdesk H LEFT JOIN employee E " _
 	& "ON (H.submitter = E.email_name)"
-
+	
 ' determine if any criteria were entered at all
 
 if query <> "" then
@@ -63,7 +83,7 @@ db.Open "bc"
 
 Set rs = db.Execute(query)
 
-'response.write query
+' response.write query
 
 if rs.EOF = -1 then
 %>
@@ -74,86 +94,62 @@ if rs.EOF = -1 then
 
 <%else%>
 
-<!-- LIST COURSES -->
+<!-- LIST REQUESTS -->
 
 <center>
-<table cellpadding="1" cellspacing="0" border="0" width=400>
-<tr>
-	<td>&nbsp;</td>
-	<td colspan=4 align=center>
-	<font face="arial"><b>Help Requests</b></font></td>
-<tr>
-	<td>&nbsp;</td>
-	<td align=center bgcolor="#800000">
-	<font face="arial" color="#ffffff"><b>by</b></font></td>
-	<td align=center bgcolor="#800000">
-	<font face="arial" color="#ffffff"><b>on</b></font></td>
-	<td align=center bgcolor="#800000">
-	<font face="arial" color="#ffffff"><b>category</b></font></td>
-	<td align=center bgcolor="#800000">
-	<font face="arial" color="#ffffff"><b>status</b></font></td>
+<font face="arial" size=2>
+New requests are in <i>italics</i><br>
+Click on the request number to see more detail</font>
+
+<table width="100%" border="1" cellspacing="0" cellpadding="0" bordercolor="#000000" bordercolorlight="#000000" bordercolordark="#000000">
 
 <%
 count = 1
 Do While Not rs.EOF
 	description = rs("description")
-	if count mod 2 <> 0 then
-		color = "c0c0c0"
-	else
-		color = "eeeeee"
-	end if
 %>
 
 <tr>
-	<td rowspan=2 valign=top align=right>
-	<font face="arial narrow" size=2><%=count%>)&nbsp;</font></td>
-	<td align=right bgcolor="#<%=color%>"><font size=2>
-	<a href="./employee/detail.asp?email_name=<%=rs("email_name")%>">
-	<%=rs("name_first") & "&nbsp;" & rs("name_last")%></a></font></td>
-	<td align=center bgcolor="#<%=color%>">
-	<font face="arial narrow" size=2><%=rs("submit_time")%></font></td>
-	<td align=center bgcolor="#<%=color%>">
-	<font size=2><%=rs("category")%></font></td>
-	<td align=center bgcolor="#<%=color%>">
-
-<%	if (Session("user") = "jabbott" OR Session("user") = "dianeg" OR Session("user") = "ngaley") AND Not rs("status") = "closed" then %>
-
-	<a href="help_edit.asp?id=<%=rs("id")%>"><%=rs("status")%></a></td>
-	
+	<td <%=light%>>
+	<table width="100%" cellspacing="2" cellpadding="1">
+	<tr>
+		<form method="post" action='help_detail.asp?id=<%=rs("id")%>'>
+		<td><font face="arial" size=2><input type="submit" value="<%=count%>"><b>
+		<% if rs("status") = "open" then %><i><% end if %>
+		
+<% if rs("hname_first") <> "" then %>
+	<a href="mailto:<%=rs("submitter")%>@<%=rs("hemail_site")%>">
+	<%=rs("hname_first") & "&nbsp;" & rs("hname_last")%></a>
 <% else %>
-
-	<%=rs("status")%></td>
-	
+	<a href="/employee/detail.asp?email_name=<%=rs("email_name")%>">
+	<%=rs("name_first") & "&nbsp;" & rs("name_last")%></a>
 <% end if %>
 
-<% if Not description = "" then %>
-<tr>
+		</b></td></form>
+		<td align="right"><font face="arial" size=2>
+		<% if rs("status") = "open" then %><i><% end if %>
+		<%=rs("submit_time")%></font></td>
 
-	<td bgcolor="#<%=color%>">&nbsp;</td>
-	<td colspan=3 valign=top bgcolor="#<%=color%>"><font face="arial" size=1>
-	<%=description%></font></td>
+<% if description <> "" then %>
+	<tr>
+		<td colspan=2>
+		<font face="arial" size=1><%=description%></font></td>
 <% end if %>
 
-<% if rs("status") = "closed" then %>
-<tr>
-	<td>&nbsp;</td>
-	<td bgcolor="#<%=color%>">&nbsp;</td>
-	<td colspan=3 bgcolor="#<%=color%>"><hr></td>
-<tr>
-	<td>&nbsp;</td>
-	<td bgcolor="#<%=color%>" align=right>
-	<font size=2><%=rs("technician")%></font></td>
-	<td bgcolor="#<%=color%>" align=center>
-	<font face="arial narrow" size=2><%=rs("complete_time")%></font></td>
-	<td colspan=2 bgcolor="#<%=color%>">&nbsp;</td>
-<tr>
-	<td>&nbsp;</td>
-	<td bgcolor="#<%=color%>">&nbsp;</td>
-	<td colspan=3 bgcolor="#<%=color%>"><font face="arial" size=1>
-	<%=rs("comments")%></font>
-	</td>
+<%
+if rs("due") <> "" AND rs("status") <> "closed" then
+	days = DateDiff("d", Now(), rs("due"))
+%>
+	<tr>
+		<td colspan=2 align="right" <%=light%>><font face="arial" size=2 color="#ff0000">
+		Complete by <%=WeekDayName(WeekDay(rs("due")))%>,
+		<%=MonthName(Month(rs("due")))%>&nbsp;<%=Day(rs("due"))%>, 
+		<%=Year(rs("due"))%>
+		(in <%=days%> days)
+		</font></font>
 <%
 	end if
+	response.write "</td></table></td>"
 	rs.MoveNext
 	count = count + 1
 Loop
@@ -164,5 +160,5 @@ db.Close
 
 </table>
 </center>
-</body>
-</html>
+
+<!--#include virtual="/footer.inc"-->

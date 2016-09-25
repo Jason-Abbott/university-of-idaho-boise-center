@@ -1,6 +1,6 @@
 <%
-' Copyright 1998 Jason Abbott (jabbott@uidaho.edu)
-' updated 01/28/98
+' Copyright 1999 Jason Abbott (jabbott@uidaho.edu)
+' updated 6/3/98
 
 dim db, event_start, event_end
 
@@ -18,6 +18,8 @@ event_end = Request.Form("month") & "-" _
 
 Set db = Server.CreateObject("ADODB.Connection")
 db.Open "bc"
+
+' generate INSERT or UPDATE SQL
 
 if Request.Form("action") = "add" then
 	query = "INSERT INTO cal_events (event_title, event_description, " _
@@ -39,21 +41,18 @@ else
 	& "event_context = '" & Request.Form("event_context") & "', " _
 	& "update_time= '" & Now & "', " _
 	& "update_machine = '" & Request.ServerVariables("REMOTE_ADDR") & "' " _
-	& "WHERE event_context = '" & Request.Form("old_context") _
-	& "' AND event_title = '" & Request.Form("old_title") _
-	& "' AND event_start = #" & Request.Form("old_start") & "#"
+	& "WHERE (event_id)=" & Request.Form("event_id")
 end if
 
 db.Execute(query)
 db.Close
 
-' send user to calendar
+' send user to event list
 
-response.redirect "cal_list.asp" _
-	& "?event_context=" & Replace(Request.Form("event_context")," ","%20") _
+response.redirect "cal.asp" _
+	& "?event_context=" & Request.Form("event_context") _
 	& "&year=" & Request.Form("year") _
-	& "&month=" & Request.Form("month") _
-	& "&day=0"
+	& "&month=" & Request.Form("month")
 %>
 
 <!-- used only to debug SQL -->

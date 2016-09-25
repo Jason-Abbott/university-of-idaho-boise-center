@@ -1,5 +1,5 @@
 <!-- 
-Copyright 1997 Jason Abbott (jabbott@uidaho.edu)
+Copyright 1999 Jason Abbott (jabbott@uidaho.edu)
 Last updated 12/10/97
 -->
 

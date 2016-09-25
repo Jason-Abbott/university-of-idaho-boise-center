@@ -1,13 +1,9 @@
 <!-- 
-Copyright 1998 Jason Abbott (jabbott@uidaho.edu)
-Last updated 03/18/98
+Copyright 1999 Jason Abbott (jabbott@uidaho.edu)
+Last updated 6/8/98
 -->
 
-<!--#include file="../authenticate.inc"-->
-
-<html>
-<body bgcolor="#FFFFFF" link="#800000" vlink="#800000" alink="#E4C721">
-
+<!--#include virtual="/header_start.inc"-->
 <%
 dim db, rs, course
 
@@ -17,103 +13,114 @@ query= "SELECT * FROM courses_engr WHERE " _
 	& "course_number = '" & Request.QueryString("course_number") _
 	& "' AND discipline = '" & Request.QueryString("discipline") & "'"
 Set rs = db.Execute(query)
+response.write rs("title")
 %>
+	</td>
+	<td align=right>
+
+<!-- edit button -->
+
+<% if Not Session("user") = "guest" then %>
+<a href="engr_course_edit.asp?action=update&course_number=<%=rs("course_number")%>&discipline=<%=rs("discipline")%>" target="body">
+<img src="/graphics/button_edit.gif" border=0>
+</a>
+<% end if %>
+
+<!-- delete button -->
+
+<%
+' Only Denise Engebrecht and technicians are allowed to
+' delete courses
+
+if Session("user") = "denisee" OR _
+	InStr(Session("technicians"), Session("user")) > 0 then
+%>
+<a href="engr_course_edit.asp?action=delete&course_number=<%=rs("course_number")%>&discipline=<%=rs("discipline")%>" target="body">
+<img src="/graphics/button_del.gif" border=0>
+</a>
+<% end if %>
+<!--#include virtual="/header_end.inc"-->
 
 <center>
 <table cellpadding="3" cellspacing="0" border="0">
 <tr>
-   <td colspan="7" align="center"><font size="5"><%=rs("title")%></font></td>
+   <td align="center" <%=light%>>
+	<font face="arial" size="2">Description</font></td>
+   <td align="center" <%=light%>>
+	<font face="arial" size="2">Discipline</font></td>
+   <td align="center" <%=light%>>
+	<font face="arial" size="2">Number</font></td>
+   <td align="center" <%=light%>>
+	<font face="arial" size="2">Section</font></td>
+   <td align="center" <%=light%>>
+	<font face="arial" size="2">CRN</font></td>
+   <td align="center" <%=light%>>
+	<font face="arial" size="2">Credits</font></td>
+   <td align="center" <%=light%>>
+	<font face="arial" size="2">Instructor</font></td>
 <tr>
-   <td align="center" bgcolor="#800000">
-	<font face="arial" size="2" color="#FFFFFF">Description</font></td>
-   <td align="center" bgcolor="#800000">
-	<font face="arial" size="2" color="#FFFFFF">Discipline</font></td>
-   <td align="center" bgcolor="#800000">
-	<font face="arial" size="2" color="#FFFFFF">Number</font></td>
-   <td align="center" bgcolor="#800000">
-	<font face="arial" size="2" color="#FFFFFF">Section</font></td>
-   <td align="center" bgcolor="#800000">
-	<font face="arial" size="2" color="#FFFFFF">CRN</font></td>
-   <td align="center" bgcolor="#800000">
-	<font face="arial" size="2" color="#FFFFFF">Credits</font></td>
-   <td align="center" bgcolor="#800000">
-	<font face="arial" size="2" color="#FFFFFF">Instructor</font></td>
-<tr>
-   <td rowspan="15" valign="top" bgcolor="#C0C0C0">
+   <td rowspan="15" valign="top">
 	<%=rs("description")%></td>
-   <td align="center" bgcolor="#C0C0C0">
+   <td align="center">
 	<%=rs("discipline")%></td>
-   <td align="center" bgcolor="#C0C0C0">
+   <td align="center">
 	<%=rs("course_number")%></td>
-   <td align="center" bgcolor="#C0C0C0">
+   <td align="center">
 	<%=rs("section")%></td>
-   <td align="center" bgcolor="#C0C0C0">
+   <td align="center">
 	<%=rs("crn")%></td>
-   <td align="center" bgcolor="#C0C0C0">
-	<b><%=rs("credits")%></b></td>
-   <td align="center" bgcolor="#C0C0C0">
-	<b><a href="./faculty/faculty_member.asp?email_name=<%=rs("instructor")%>">
-	<%=rs("instructor")%></a></b></td>
+   <td align="center">
+	<%=rs("credits")%></td>
+   <td align="center">
+	<a href="/employee/detail.asp?email_name=<%=rs("instructor")%>">
+	<%=rs("instructor")%></a></td>
 <tr>
-   <td colspan="6" align="center" bgcolor="#800000">
-	<font face="arial" size="2" color="#FFFFFF">Schedule</font></td>
+   <td colspan="6" align="center" <%=light%>>
+	<font face="arial" size="2">Schedule</font></td>
+
+<% if rs("course_date") <> "" OR rs("course_time") <> "" then %>
 <tr>
-   <td colspan="6" bgcolor="#c0c0c0">
-	<font face="arial" size="2">Current Semester:</font></td>
+   <td colspan="6">
+	<font face="arial" size="2">Days and Times:</font></td>
 <tr>
-   <td colspan="6" align="center" bgcolor="#c0c0c0">
+   <td colspan="6" align="center">
 	<%=rs("course_date")%><br><%=rs("course_time")%></td>
+<% end if %>
+
 <tr>
-   <td colspan="6" bgcolor="#c0c0c0">
-	<font face="arial" size="2">Future Semesters:</font></td>
+   <td colspan="6">
+	<font face="arial" size="2">Semesters:</font></td>
 <tr>
-   <td colspan="3" align="center" bgcolor="#c0c0c0">
-	<u>Live <img src="../graphics/live.gif"></u></td>
-	<td colspan="3" align="center" bgcolor="#c0c0c0">
-	<u>Video <img src="../graphics/video.gif"></u></td>
+   <td colspan="3" align="center" valign="top">
+	<u>Live <img src="/graphics/live.gif"></u><br>
 <%
-for each x in Application("engineering_dates")
-'	response.write x & "," & rs(x) & ",<br>"
-	if rs(x) = "True" then
-		response.write "<tr>"
-		course = split(x,"_",-1,1)
-		if	course(2) = "live" then
-			response.write "<td colspan='3' align='center' bgcolor='#c0c0c0'>" _
-				& course(0) & " " & course(1) & "</td>"
+for each y in Application("years")
+	for each s in Application("sems")
+		if rs(s & "_" & y & "_Live") = "True" then
+			response.write s & " " & y & "<br>"
 		end if
-		if course(2) = "video" then
-			response.write "<td colspan='3'></td><td colspan='3' align='center' bgcolor='#c0c0c0'>" _
-				& course(0) & " " & course(1) & "</td>"
+	next
+next
+%>
+	</td>
+	<td colspan="3" align="center" valign="top">
+	<u>Video <img src="/graphics/video.gif"></u><br>
+<%
+for each y in Application("years")
+	for each s in Application("sems")
+		if rs(s & "_" & y & "_Video") = "True" then
+			response.write s & " " & y & "<br>"
 		end if
-	end if
+	next
 next
 %>
    </td>
 </table>
 <p>
-
-<!------ EDIT BUTTON ------>
-
-<% if Not Session("user") = "guest" then %>
-<a href="engr_course_edit.asp?action=update&course_number=<%=rs("course_number")%>&discipline=<%=rs("discipline")%>" target="body">
-<img src="../graphics/button_edit.jpg" border=0>
-</a>
-<% end if %>
-
-<!------ DELETE BUTTON ------>
-
-<% if Session("user") = "jabbott" then %>
-<a href="engr_course_edit.asp?action=delete&course_number=<%=rs("course_number")%>&discipline=<%=rs("discipline")%>" target="body">
-<img src="../graphics/button_del.jpg" border=0>
-</a>
-<% end if %>
-
-<!------ END BUTTONS ------>
-
 <%
 rs.Close
 db.Close
 %>
 </center>
-</body>
-</html>
+
+<!--#include virtual="/footer.inc"-->

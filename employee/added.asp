@@ -1,10 +1,10 @@
 <%
-' Copyright 1997 Jason Abbott (jabbott@uidaho.edu)
-' Last updated 12/21/97
+' Copyright 1999 Jason Abbott (jabbott@uidaho.edu)
+' Last updated 5/28/98
 
-dim db, query, x
+dim x, db, query
 
-if Session("user") = "guest" then response.redirect "./error.asp"
+if Session("user") = "guest" then response.redirect "/error.asp"
 
 Set db = Server.CreateObject("ADODB.Connection")
 db.Open "bc"
@@ -43,5 +43,7 @@ response.redirect "detail.asp?email_name=" & Request.Form("email_name")
 <html>
 <body bgcolor=#FFFFFF>
 <%= query %>
+<p>
+<%= Request.Form("name_first") %>
 </body>
 </html>

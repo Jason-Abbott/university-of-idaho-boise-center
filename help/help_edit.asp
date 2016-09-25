@@ -1,44 +1,56 @@
 <!-- 
-Copyright 1998 Jason Abbott (jabbott@uidaho.edu)
-Last updated 05/18/98
+Copyright 1999 Jason Abbott (jabbott@uidaho.edu)
+Last updated 01/27/99
 -->
 
-<HTML>
-<body link="#800000" vlink="#800000" alink="#E4C721" bgcolor="#FFFFFF">
+<!--#include virtual="/header_start.inc"-->
+Boise Center HelpDesk Update
+<!--#include virtual="/header_end.inc"-->
 
-<!--#include file="../authenticate.inc"-->
 <%
-dim query
+dim query, bc, rs, description, comments, name_first, name_last, email_name, email_site, link
 
 Set db = Server.CreateObject("ADODB.Connection")
 db.Open "bc"
 
-query = "SELECT * FROM helpdesk H INNER JOIN employee E " _
+query = "SELECT * FROM helpdesk H LEFT JOIN employee E " _
 	& "ON (H.submitter = E.email_name) " _
 	& "WHERE (id)=" & Request.QueryString("id")
 
 Set rs = db.Execute(query)
 
+if rs("hname_first") <> "" then
+	name_first = rs("hname_first")
+	name_last = rs("hname_last")
+	email_name = rs("submitter")
+	email_site = rs("hemail_site")
+	link = "mailto:" & email_name & "@" & email_site
+else
+	name_first = rs("name_first")
+	name_last = rs("name_last")
+	email_name = rs("email_name")
+	email_site = rs("email_site")
+	link = "/employee/detail.asp?email_name=" & email_name
+end if
+
 description = rs("description")
+comments = rs("comments")
 %>
 
 <center>
-<table cellpadding="4" cellspacing="0" border="0" width=350>
+<table cellpadding="4" cellspacing="0" border="0" width="80%">
 <tr>
-	<td colspan=3 align=center>
-	<font face="arial"><b>Update Help Request</b></font></td>
-<tr>
-	<td align=center bgcolor="#800000">
-	<font face="arial" color="#ffffff"><b>by</b></font></td>
-	<td align=center bgcolor="#800000">
-	<font face="arial" color="#ffffff"><b>on</b></font></td>
-	<td align=center bgcolor="#800000">
-	<font face="arial" color="#ffffff"><b>category</b></font></td>
+	<td align="center" <%=light%>>
+	<font face="arial"><b>by</b></font></td>
+	<td align="center" <%=light%>>
+	<font face="arial"><b>on</b></font></td>
+	<td align="center" <%=light%>>
+	<font face="arial"><b>category</b></font></td>
 <tr>
 	<form action="help_updated.asp" method=post>
-	<td align=right bgcolor="#c0c0c0"><font size=2>
-	<a href="./employee/detail.asp?email_name=<%=rs("email_name")%>">
-	<%=rs("name_first") & "&nbsp;" & rs("name_last")%></a></font></td>
+	<td align="center" bgcolor="#c0c0c0"><font size=2>
+	<a href="<%=link%>">
+	<%=name_first & "&nbsp;" & name_last%></a></font></td>
 
 	<td align=center bgcolor="#c0c0c0">
 	<font face="arial narrow" size=2><%=rs("submit_time")%></font></td>
@@ -46,7 +58,7 @@ description = rs("description")
 	<td align=center bgcolor="#c0c0c0">
 	<font size=2><%=rs("category")%></font></td>
 
-<% if Not description = "" then %>
+<% if description <> "" then %>
 <tr>
 
 	<td bgcolor="#c0c0c0">&nbsp;</td>
@@ -55,45 +67,62 @@ description = rs("description")
 
 <% end if %>
 
+<input type="hidden" name="id" value='<%=rs("id")%>'>
+<input type="hidden" name="submitter_first" value='<%=name_first%>'>
+<input type="hidden" name="submitter_last" value='<%=name_last%>'>
+<input type="hidden" name="submitter_email_name" value='<%=email_name%>'>
+<input type="hidden" name="submitter_email_site" value='<%=email_site%>'>
+<input type="hidden" name="category" value='<%=rs("category")%>'>
+<input type="hidden" name="description" value='<%=description%>'>
+<input type="hidden" name="submit_time" value='<%=rs("submit_time")%>'>
+
 <tr>
-	<td colspan=3 bgcolor="#c0c0c0"><hr></td>
-<tr>
-	<td bgcolor="#c0c0c0" valign=top align=center><font face="arial" size=1>
-	Primary Tehcnician<br>
-	<select name="technician">
-	<option value="jabbott">Jason Abbott
-	<option value="haochen">Diane Griffitts
-	<option value="ngaley">Norm Galey
-	</select>
+	<td colspan=3 bgcolor="#c0c0c0"><hr>
+
+<% if comments <> "" then %>
+
+	<font face="arial" size=1>Existing Comments</font><br>
+	<textarea cols="50" rows="4" wrap="virtual"><%=comments%></textarea>
+	<input type="hidden" name="comments_old" value='<%=comments%>'>
 	<br>
-	Time Spent (hours)<br>
-	<input type="text" name="time_spent" size=5>
-	<p>
-	<input type="submit" value="update">
-	</font></td>
+	
+<% end if %>
 
-	<td colspan=2 bgcolor="#c0c0c0" valign=top><font face="arial" size=1>
-	Comments</font><br>
-	<textarea name="comments" cols=30 rows=4></textarea>
-	</td>
+	<font face="arial" size=1>New Comment</font><br>
+	<textarea name="comments_new" cols="50" rows="8" wrap="virtual"></textarea>
+	<br>
+	<font face="arial" size=1>by</font>
+	<select name="technician">
+	
+<%
+rs.Close
 
-<input type="hidden" name="status" value="closed">
-<input type="hidden" name="id" value="<%=rs("id")%>">
-<input type="hidden" name="submitter_first" value="<%=rs("name_first")%>">
-<input type="hidden" name="submitter_last" value="<%=rs("name_last")%>">
-<input type="hidden" name="submitter_email_name" value="<%=rs("email_name")%>">
-<input type="hidden" name="submitter_email_site" value="<%=rs("email_site")%>">
-<input type="hidden" name="category" value="<%=rs("category")%>">
-<input type="hidden" name="description" value="<%=description%>">
-<input type="hidden" name="submit_time" value="<%=rs("submit_time")%>">
-</form>
-</table>
+query = "SELECT name_first, name_last, email_name FROM employee " _
+	& "WHERE email_name IN (" & Session("technicians") & ") " _
+	& "ORDER BY name_last"
+Set rs = db.Execute(query)
+Do While Not rs.EOF
+%>
+
+<option value="<%=rs("email_name")%>"<% if rs("email_name") = Session("user") then %> selected<% end if %>><%=rs("name_first") & " " & rs("name_last")%>
 
 <%
+rs.MoveNext
+Loop
 rs.Close
 db.Close
 %>
 
+	</select>
+	<hr>
+	<input type="checkbox" name="close"><font face="arial" size=2>This request is now closed<br>
+	It took <input type="text" name="time_spent" size=5> (required) hours to complete
+	<hr>
+	</td>
+<tr>
+	<td colspan=3 bgcolor="#c0c0c0" align="right"><input type="submit" value="update"></td>
+</form>
+</table>
 </center>
-</body>
-</html>
+
+<!--#include virtual="/footer.inc"-->
